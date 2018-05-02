@@ -1,8 +1,13 @@
 package cms.sre.product_list_emitter;
 
+import cms.sre.httpclient_connection_helper.HttpClientFactory;
+import cms.sre.httpclient_connection_helper.HttpClientParameters;
 import cms.sre.mongo_reactive_connection_helper.MongoClientParameters;
 import cms.sre.mongo_reactive_connection_helper.MongoReactiveClientFactory;
+import cms.sre.product_list_emitter.dao.ProductListDao;
+import cms.sre.product_list_emitter.dao.SharepointProductListDao;
 import com.mongodb.reactivestreams.client.MongoClient;
+import org.apache.http.client.HttpClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -14,7 +19,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.mongodb.config.AbstractReactiveMongoConfiguration;
 import org.springframework.data.mongodb.repository.config.EnableReactiveMongoRepositories;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+
+@EnableScheduling
 @SpringBootApplication(exclude = {MongoAutoConfiguration.class, MongoDataAutoConfiguration.class, MongoReactiveDataAutoConfiguration.class, MongoReactiveAutoConfiguration.class})
 @PropertySource(value = "file:/data/product-list-emitter/configuration/application.properties", ignoreResourceNotFound = true)
 @EnableReactiveMongoRepositories
@@ -56,7 +70,21 @@ public class App extends AbstractReactiveMongoConfiguration {
     @Value("${sharepoint.listLocation:#{null}}")
     protected String sharepointListLocation;
 
-    @Bean
+    @Value("${httpclient.keyStoreKeyPassword:#{null}}")
+    protected String httpclientKeyStoreKeyPassword;
+
+    @Value("${httpclient.keyStoreLocation:#{null}}")
+    protected String httpclientKeyStoreLocation;
+
+    @Value("${httpclient.keyStorePassword:#{null}}")
+    protected String httpclientKeyStorePassword;
+
+    @Value("${httpclient.trustStoreLocation:#{null}}")
+    protected String httpclientTrustStoreLocation;
+
+    @Value("${httpclient.trustStorePassword:#{null}}")
+    protected String httpclientTrustStorePassword;
+
     protected String productListLocation(){
         String ending = "/AllItems.aspx";
         String ret = this.sharepointListLocation;
@@ -64,6 +92,11 @@ public class App extends AbstractReactiveMongoConfiguration {
             ret.substring(0, ret.length() - ending.length());
         }
         return ret;
+    }
+
+    @Bean
+    protected ProductListDao productListDao() throws CertificateException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
+        return new SharepointProductListDao(this.httpClient(), this.productListLocation());
     }
 
     private static String nullWrapper(String value){
@@ -79,6 +112,18 @@ public class App extends AbstractReactiveMongoConfiguration {
             }
         }
         return ret;
+    }
+
+    @Bean
+    public HttpClient httpClient() throws CertificateException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
+        HttpClientParameters parameters = new HttpClientParameters()
+                .setKeyStoreKeyPassword(this.httpclientKeyStoreKeyPassword)
+                .setKeyStoreLocation(this.httpclientKeyStoreLocation)
+                .setKeyStoreKeyPassword(this.httpclientKeyStorePassword)
+                .setTrustStoreLocation(this.httpclientTrustStoreLocation)
+                .setTrustStorePassword(this.mongoTrustStorePassword);
+
+        return HttpClientFactory.httpClient(parameters);
     }
 
     @Override

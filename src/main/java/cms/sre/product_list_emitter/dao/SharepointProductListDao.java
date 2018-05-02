@@ -4,14 +4,18 @@ import cms.sre.dna_common_data_model.product_list.Product;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.org.apache.xpath.internal.operations.Bool;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.util.EntityUtils;
 import org.json.simple.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-@Service
 public class SharepointProductListDao implements ProductListDao {
 
     private static List<String> parseDevelopers(JsonNode result){
@@ -119,8 +123,8 @@ public class SharepointProductListDao implements ProductListDao {
 
     private static Boolean parseNeedsSCM(JsonNode result){
         Boolean ret = null;
-        if(result != null && result.has("NoCode") && !result.get("NoCode").isNull()){
-            ret =  result.get("NoCode")
+        if(result != null && result.has("NoCode") && !(result.get("NoCode").isNull() || result.get("NoCode").asText().equals("null"))){
+            ret =  !result.get("NoCode")
                     .asBoolean();
         }
         return ret;
@@ -128,7 +132,7 @@ public class SharepointProductListDao implements ProductListDao {
 
     private static String parseScmLocation(JsonNode result){
         String ret = null;
-        if(result != null && result.has("SCMLocation")){
+        if(result != null && result.has("SCMLocation") && !result.get("SCMLocation").asText().equals("null")){
             ret = result.get("SCMLocation")
                     .asText();
         }
@@ -154,7 +158,8 @@ public class SharepointProductListDao implements ProductListDao {
                             .setOrg(parseOrg(result))
                             .setDivision(parseDivision(result))
                             .setNeedsSCM(parseNeedsSCM(result))
-                            .setSCMLocation(parseScmLocation(result));
+                            .setSCMLocation(parseScmLocation(result))
+                            .setSection(parseSection(result));
 
                     ret.add(product);
                 });
@@ -162,8 +167,53 @@ public class SharepointProductListDao implements ProductListDao {
         return ret;
     }
 
+    private HttpClient httpClient;
+    private String productListLocation;
+
+    public SharepointProductListDao(HttpClient httpClient, String productListLocation){
+        this.httpClient = httpClient;
+        this.productListLocation = productListLocation;
+    }
+
+    public HttpClient getHttpClient() {
+        return httpClient;
+    }
+
+    public SharepointProductListDao setHttpClient(HttpClient httpClient) {
+        this.httpClient = httpClient;
+        return this;
+    }
+
+    public String getProductListLocation() {
+        return productListLocation;
+    }
+
+    public SharepointProductListDao setProductListLocation(String productListLocation) {
+        this.productListLocation = productListLocation;
+        return this;
+    }
+
     @Override
-    public List<Product> getProducts() {
-        return null;
+    public List<Product> getProducts() throws IOException {
+        if(this.productListLocation == null || !this.productListLocation.startsWith("http")){
+            throw new IOException("Invalid Product List Location: " + this.productListLocation);
+        }
+
+        HttpGet get = new HttpGet(this.productListLocation);
+        return this.httpClient.execute(get, (httpResponse -> {
+                List<Product> ret = new LinkedList<>();
+                int statusCode = httpResponse.getStatusLine().getStatusCode();
+                if(statusCode >= 200 && statusCode < 300){
+                    String responseBody = EntityUtils.toString(httpResponse.getEntity());
+                    ret = parse(responseBody);
+                }else if(statusCode > 400 && statusCode < 500){
+                    throw new IOException("StatusCode: " + statusCode + ".  Looks like a connection error.");
+                }else if(statusCode == 400 || statusCode > 500){
+                    throw new IOException("StatusCode: " + statusCode + ".  Looks like an application error with sharepoint.  ResponseBody: " + EntityUtils.toString(httpResponse.getEntity()));
+                }else{
+                    throw new IOException("StatusCode: " + statusCode);
+                }
+                return ret;
+        }));
     }
 }
