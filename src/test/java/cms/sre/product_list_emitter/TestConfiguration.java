@@ -11,6 +11,10 @@ import de.flapdoodle.embed.mongo.config.MongodConfigBuilder;
 import de.flapdoodle.embed.mongo.config.Net;
 import de.flapdoodle.embed.mongo.distribution.Version;
 import de.flapdoodle.embed.process.runtime.Network;
+import org.apache.http.client.HttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 
@@ -19,7 +23,10 @@ import org.springframework.core.annotation.Order;
 public class TestConfiguration extends App{
     private MongodExecutable mongodExecutable;
 
-    public TestConfiguration(){ super.mongoDatabaseName = "test";}
+    public TestConfiguration(){
+        super.mongoDatabaseName = "test";
+        super.sharepointListLocation = "http://localhost:8080";
+    }
 
     @Override
     public MongoClient reactiveMongoClient(){
@@ -41,5 +48,11 @@ public class TestConfiguration extends App{
             throw new RuntimeException(e);
         }
         return MongoClients.create(new ConnectionString("mongodb://localhost:"+port+"/replicaSet=rs0"));
+    }
+
+    @Override
+    public void finalize(){
+        if(this.mongodExecutable != null)
+            this.mongodExecutable.stop();
     }
 }
