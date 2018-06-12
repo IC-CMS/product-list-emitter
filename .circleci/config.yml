@@ -71,7 +71,16 @@ jobs:
     steps:
       - checkout
       - run: sed -i "s/BUILDNUMBER/$(date +%s)/g" pom.xml
-      - run: mvn -s .circleci/.circleci.settings.xml deploy -DskipTests      
+      - run: mvn -s .circleci/.circleci.settings.xml deploy -DskipTests
+      - setup_remote_docker:
+        docker_layer_cache: true
+      - run: |
+          TAG=0.1.$CIRCLE_BUILD_NUM
+          docker build -t sredna/product-list-emitter:$TAG .
+          docker tag sredna/product-list-emitter:$TAG sredna/product-list-emitter:latest
+          docker login -u $DOCKER_USER -p $DOCKER_PASS
+          docker push sredna/product-list-emitter:$TAG
+          docker push sredna/product-list-emitter:latest
 workflows:
   version: 2
   build_and_test:
