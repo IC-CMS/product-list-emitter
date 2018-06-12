@@ -6,7 +6,7 @@
 
     <groupId>cms.sre</groupId>
     <artifactId>product-list-emitter</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.BUILDNUMBER</version>
     <name>product-list-emitter</name>
     <scm>
         <url>https://github.com/IC-CMS/product-list-emitter.git</url>
