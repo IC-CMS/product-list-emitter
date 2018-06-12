@@ -6,7 +6,7 @@
 
     <groupId>cms.sre</groupId>
     <artifactId>product-list-emitter</artifactId>
-    <version>1.0</version>
+    <version>1.1.0</version>
     <name>product-list-emitter</name>
     <scm>
         <url>https://github.com/IC-CMS/product-list-emitter.git</url>
@@ -58,7 +58,7 @@
         <dependency>
             <groupId>cms.sre</groupId>
             <artifactId>httpclient-connection-helper</artifactId>
-            <version>1.0.1</version>
+            <version>1.2.1528817604</version>
         </dependency>
 
         <!-- Testing Dependencies -->
@@ -76,12 +76,6 @@
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.nanohttpd</groupId> <!-- <groupId>com.nanohttpd</groupId> for 2.1.0 and earlier -->
-            <artifactId>nanohttpd</artifactId>
-            <version>2.2.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
