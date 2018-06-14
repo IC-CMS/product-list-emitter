@@ -70,10 +70,10 @@ jobs:
       MAVEN_OPTS: -Xmx3200m 
     steps:
       - checkout
-      - run: sed -i "s/BUILDNUMBER/$(date +%s)/g" pom.xml
-      - run: mvn -s .circleci/.circleci.settings.xml deploy -DskipTests
       - setup_remote_docker:
           docker_layer_caching: true
+      - run: sed -i "s/BUILDNUMBER/$CIRCLE_BUILD_NUM/g" pom.xml
+      - run: mvn -T1.5C -s .circleci/.circleci.settings.xml deploy -DskipTests
       - run: |
           TAG=1.1.$CIRCLE_BUILD_NUM
           docker build -t sredna/product-list-emitter:$TAG .

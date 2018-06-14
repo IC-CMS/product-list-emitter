@@ -200,6 +200,9 @@ public class SharepointProductListDao implements ProductListDao {
         }
 
         HttpGet get = new HttpGet(this.productListLocation);
+        get.addHeader("Content-Type", "application/json;odata=verbose");
+        get.addHeader("Accept", "application/json;odata=verbose");
+
         return this.httpClient.execute(get, (httpResponse -> {
                 List<Product> ret = new LinkedList<>();
                 int statusCode = httpResponse.getStatusLine().getStatusCode();
