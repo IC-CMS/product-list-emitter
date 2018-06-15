@@ -30,12 +30,19 @@ jobs:
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
 
-      - run: mvn -s .circleci/.circleci.settings.xml clean install -DskipTests
-
+      - run: mvn -s .circleci/.circleci.settings.xml clean package -DskipTests
       - save_cache:
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "pom.xml" }}
+      
+      - run: mkdir -p /tmp/workspace/ && cp -r target /tmp/workspace
+      - run: ls -lart /tmp/workspace/target
+      - persist_to_workspace:
+          root: /tmp/workspace/target
+          paths:
+            - ./*
+            - ./*.jar          
   test:
     docker:
       # specify the version you desire here
@@ -59,12 +66,6 @@ jobs:
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "pom.xml" }}      
-      - run: ls -lart
-      - run: mkdir -p /tmp/workspace/ && cp -r target /tmp/workspace
-      - persist_to_workspace:
-          root: /tmp/workspace/target
-          paths:
-            - ./*
   deploy:
     docker:
       # specify the version you desire here
