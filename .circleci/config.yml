@@ -41,7 +41,7 @@ jobs:
           root: /tmp/workspace/target
           paths:
             - ./*
-            - ./*.jar          
+            - ../Dockerfile
   test:
     docker:
       # specify the version you desire here
