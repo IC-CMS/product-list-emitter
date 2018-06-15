@@ -64,7 +64,7 @@ jobs:
     docker:
       # specify the version you desire here
       - image: circleci/openjdk:8-jdk
-    working_directory: ~/repo
+    working_directory: ~/repo2
     environment:
       # Customize the JVM maximum heap limit
       MAVEN_OPTS: -Xmx3200m 
@@ -74,7 +74,14 @@ jobs:
           docker_layer_caching: true
       - run: sed -i "s/BUILDNUMBER/$CIRCLE_BUILD_NUM/g" pom.xml
       - run: mvn -T1.5C -s .circleci/.circleci.settings.xml deploy -DskipTests
+  publish:
+    machine:
+      enabled: true
+    working_directory: ~/repo
+    steps:
+      - checkout      
       - run: |
+          mv target/*.jar target/product-list-emitter.jar
           TAG=1.1.$CIRCLE_BUILD_NUM
           docker build -t sredna/product-list-emitter:$TAG .
           docker tag sredna/product-list-emitter:$TAG sredna/product-list-emitter:latest
@@ -83,17 +90,23 @@ jobs:
           docker push sredna/product-list-emitter:latest
 workflows:
   version: 2
-  build_and_test:
+  full_boat:
     jobs: 
       - build
       - test:
           requires:
             - build
       - deploy:
+          requires:
+            - test
           filters:
             branches:
               only:
                 - master
+      - publish:
           requires:
-            - build
             - test
+          filters:
+            branches:
+              only:
+                - master                
