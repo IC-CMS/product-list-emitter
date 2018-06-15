@@ -100,8 +100,8 @@ workflows:
   version: 2
   full_boat:
     jobs: 
-      - test:
-      - build
+      - test
+      - build:
           requires:
             - test      
       - deploy:
