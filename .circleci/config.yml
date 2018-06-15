@@ -36,12 +36,13 @@ jobs:
             - ~/.m2
           key: v1-dependencies-{{ checksum "pom.xml" }}
       
-      - run: mkdir -p /tmp/workspace/ && cp -r target /tmp/workspace
+      - run: mkdir -p /tmp/workspace/ && cp -r target /tmp/workspace && cp Dockerfile /tmp/workspace/target/
       - persist_to_workspace:
           root: /tmp/workspace/target
           paths:
             - ./*
-            - ./*.jar          
+            - ./*.jar
+            - ./Dockerfile
   test:
     docker:
       # specify the version you desire here
@@ -87,9 +88,8 @@ jobs:
       - attach_workspace:
           at: /tmp/workspace
       - run: ls -lart /tmp/workspace
+      - run: mkdir target && mv /tmp/workspace/*.jar target/product-list-emitter.jar && mv /tmp/workspace/Dockerfile ./Dockerfile
       - run: |
-          mkdir target
-          mv /tmp/workspace/*.jar target/product-list-emitter.jar
           TAG=1.1.$CIRCLE_BUILD_NUM
           docker build -t sredna/product-list-emitter:$TAG .
           docker tag sredna/product-list-emitter:$TAG sredna/product-list-emitter:latest
