@@ -103,7 +103,7 @@ workflows:
       - test
       - build:
           requires:
-            - test   
+            - test      
       - deploy:
           requires:
             - test
