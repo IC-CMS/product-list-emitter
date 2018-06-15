@@ -64,7 +64,7 @@ jobs:
       - persist_to_workspace:
           root: /tmp/workspace/target
           paths:
-            - *.jar
+            - ./*
   deploy:
     docker:
       # specify the version you desire here
