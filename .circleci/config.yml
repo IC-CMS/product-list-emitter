@@ -37,7 +37,6 @@ jobs:
           key: v1-dependencies-{{ checksum "pom.xml" }}
       
       - run: mkdir -p /tmp/workspace/ && cp -r target /tmp/workspace
-      - run: ls -lart /tmp/workspace/target
       - persist_to_workspace:
           root: /tmp/workspace/target
           paths:
