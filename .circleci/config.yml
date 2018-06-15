@@ -4,7 +4,7 @@
 #
 version: 2
 jobs:
-  build:
+  package:
     docker:
       # specify the version you desire here
       - image: circleci/openjdk:8-jdk
@@ -17,13 +17,10 @@ jobs:
     working_directory: ~/repo
 
     environment:
-      # Customize the JVM maximum heap limit
       MAVEN_OPTS: -Xmx3200m 
 
     steps:
       - checkout
-
-      # Download and cache dependencies
       - restore_cache:
           keys:
           - v1-dependencies-{{ checksum "pom.xml" }}
@@ -31,11 +28,11 @@ jobs:
           - v1-dependencies-
 
       - run: mvn -s .circleci/.circleci.settings.xml clean package -DskipTests
+      #Why save the cache twice?  In case the mvn test didn't pull everything correctly, we have a second go.
       - save_cache:
           paths:
             - ~/.m2
-          key: v1-dependencies-{{ checksum "pom.xml" }}
-      
+          key: v1-dependencies-{{ checksum "pom.xml" }}      
       - run: mkdir -p /tmp/workspace/ && cp -r target /tmp/workspace && cp Dockerfile /tmp/workspace/target/
       - persist_to_workspace:
           root: /tmp/workspace/target
@@ -54,18 +51,13 @@ jobs:
     steps:
       - checkout    
       # Download and cache dependencies
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "pom.xml" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
       - run: mvn -s .circleci/.circleci.settings.xml test
       - store_test_results:          
           path: target/surefire-reports      
       - save_cache:
           paths:
             - ~/.m2
-          key: v1-dependencies-{{ checksum "pom.xml" }}      
+          key: v1-dependencies-{{ checksum "pom.xml" }}
   deploy:
     docker:
       # specify the version you desire here
@@ -76,10 +68,13 @@ jobs:
       MAVEN_OPTS: -Xmx3200m 
     steps:
       - checkout
-      - setup_remote_docker:
-          docker_layer_caching: true
-      - run: sed -i "s/BUILDNUMBER/$CIRCLE_BUILD_NUM/g" pom.xml
-      - run: mvn -T1.5C -s .circleci/.circleci.settings.xml deploy -DskipTests
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "pom.xml" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
+      - run: VERSION_NUM=($CIRCLE_BUILD_NUM + 1) && sed -i "s/BUILDNUMBER/$VERSION_NUM/g" pom.xml
+      - run: mvn -s .circleci/.circleci.settings.xml deploy -DskipTests
   publish:
     machine:
       enabled: true
@@ -101,7 +96,7 @@ workflows:
   full_boat:
     jobs: 
       - test
-      - build:
+      - package:
           requires:
             - test      
       - deploy:
@@ -113,7 +108,7 @@ workflows:
                 - master
       - publish:
           requires:
-            - build
+            - package
           filters:
             branches:
               only:
