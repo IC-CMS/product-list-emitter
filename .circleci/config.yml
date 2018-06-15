@@ -60,6 +60,9 @@ jobs:
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "pom.xml" }}      
+      - persist_to_workspace:
+          root: target
+          paths: *.jar
   deploy:
     docker:
       # specify the version you desire here
@@ -79,7 +82,8 @@ jobs:
       enabled: true
     working_directory: ~/repo
     steps:
-      - checkout      
+      - attach_workspace:
+          at: target
       - run: |
           mv target/*.jar target/product-list-emitter.jar
           TAG=1.1.$CIRCLE_BUILD_NUM
