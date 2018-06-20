@@ -132,9 +132,9 @@ public class App extends AbstractReactiveMongoConfiguration {
         HttpClientParameters parameters = new HttpClientParameters()
                 .setKeyStoreKeyPassword(this.httpclientKeyStoreKeyPassword)
                 .setKeyStoreLocation(this.httpclientKeyStoreLocation)
-                .setKeyStoreKeyPassword(this.httpclientKeyStorePassword)
+                .setKeyStorePassword(this.httpclientKeyStorePassword)
                 .setTrustStoreLocation(this.httpclientTrustStoreLocation)
-                .setTrustStorePassword(this.mongoTrustStorePassword);
+                .setTrustStorePassword(this.httpclientTrustStorePassword);
 
         return HttpClientFactory.httpClient(parameters);
     }
