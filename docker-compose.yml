@@ -1,0 +1,39 @@
+# Help: rename the adject docker-compose.override.example.yml file to docker-compose.override.yml
+#       then in the override file uncomment the environment tag for the collectors you want to
+#       run. Then add the environment vars you want to use.
+version: '3'
+services:
+  db:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - "db-data:/data/db:Z"
+
+  db-setup:
+    build: db
+    depends_on:
+      - db
+
+  product-list-emitter:
+    image: sredna/product-list-emitter:latest
+    depends_on:
+      - db-setup
+    volumes:
+      - "/data/product-list-emitter/configuration/application.properties:/data/product-list-emitter/configuration/application.properties"
+      - "/etc/pki/tls/certs/selfsigned.p12:/etc/pki/tls/certs/selfsigned.p12"
+    links:
+      - nginx
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "443:443"
+    volumes:
+      - "/etc/pki/tls/certs/selfsigned.crt:/etc/pki/tls/certs/selfsigned.crt"
+      - "/etc/pki/tls/private/selfsigned.key:/etc/pki/tls/private/selfsigned.key"
+      - "/data/product-list-emitter/nginx.conf:/etc/nginx/nginx.conf"
+      - "/data/product-list-emitter/html:/etc/nginx/html:Z"
+
+volumes:
+  db-data:
