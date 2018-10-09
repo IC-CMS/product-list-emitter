@@ -25,9 +25,9 @@ public class Microservice implements Runnable{
     @Autowired
     private ProductListDao productListDao;
 
-    //This denotes the method should run every ten seconds Monday - Friday.
+    //This denotes the method should run every five minutes Monday - Friday, unless overridden by properties.
     //@see https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/scheduling/support/CronSequenceGenerator.html
-    @Scheduled(cron = "*/10 * * * * MON-FRI")
+    @Scheduled(cron = "${sharepoint.schedule:0 */5 * * * MON-FRI}")
     public void run(){
         try {
             // Populate list of products to delete; start with all products
